@@ -187,20 +187,41 @@ namespace SqlSugar
         {
             if (columns == null)
                 columns = new string[] { };
-            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => !columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => !columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
+                .Where(it => !columns.Any(ig => 
+                    ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) ||
+                    ig.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)
+                )
+            ).ToList();
             return this;
         }
 
         public IInsertable<T> InsertColumns(Expression<Func<T, object>> columns)
         {
             var ignoreColumns = InsertBuilder.GetExpressionValue(columns, ResolveExpressType.ArraySingle).GetResultArray().Select(it => this.SqlBuilder.GetNoTranslationColumnName(it)).ToList();
-            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => ignoreColumns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => ignoreColumns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+
+            //this.UpdateBuilder.DbColumnInfoList = this.UpdateBuilder.DbColumnInfoList.Where(it => updateColumns.Any(uc => uc.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) || uc.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)) || it.IsPrimarykey || it.IsIdentity).ToList();
+            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
+                .Where(it => insertColumns.Any(ic => 
+                    ic.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) ||
+                    ic.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)
+                )
+            ).ToList();
             return this;
         }
 
         public IInsertable<T> InsertColumns(string[] columns)
         {
-            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            
+            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
+                .Where(it => columns.Any(ic => 
+                    ic.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) ||
+                    ic.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)
+                )
+            ).ToList();
             return this;
         }
 
