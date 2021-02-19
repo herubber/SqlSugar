@@ -386,7 +386,13 @@ namespace SqlSugar
                 var keys = UpdateBuilder.SetValues.Select(it => SqlBuilder.GetNoTranslationColumnName(it.Key.ToLower())).ToList();
                 var addKeys = keys.Where(k => !this.UpdateBuilder.DbColumnInfoList.Any(it => it.PropertyName.ToLower() == k || it.DbColumnName.ToLower() == k)).ToList();
                 var addItems = this.EntityInfo.Columns.Where(it => !GetPrimaryKeys().Any(p => p.ToLower() == it.PropertyName?.ToLower() || p.ToLower() == it.DbColumnName?.ToLower()) && addKeys.Any(k => it.PropertyName?.ToLower() == k || it.DbColumnName?.ToLower() == k)).ToList();
-                this.UpdateBuilder.DbColumnInfoList.AddRange(addItems.Select(it => new DbColumnInfo() { PropertyName = it.PropertyName, DbColumnName = it.DbColumnName }));
+                // this.UpdateBuilder.DbColumnInfoList.AddRange(addItems.Select(it => new DbColumnInfo() { PropertyName = it.PropertyName, DbColumnName = it.DbColumnName }));
+                // modify by kevin , 添加 PropertyType 赋值,不然超过一个参数后面会判断是否枚举报空指针错误
+                this.UpdateBuilder.DbColumnInfoList.AddRange(addItems.Select(it => new DbColumnInfo() { 
+                    PropertyName = it.PropertyName, 
+                    DbColumnName = it.DbColumnName,
+                    PropertyType = it.PropertyInfo.PropertyType
+                }));
             }
             SetColumnsIndex++;
         }

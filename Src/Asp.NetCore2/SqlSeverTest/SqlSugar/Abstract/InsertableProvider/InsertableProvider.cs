@@ -187,6 +187,7 @@ namespace SqlSugar
         {
             if (columns == null)
                 columns = new string[] { };
+            // modify by kevin, 增加判断字段名,原来只判断属性名
             // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => !columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
             this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
                 .Where(it => !columns.Any(ig => 
