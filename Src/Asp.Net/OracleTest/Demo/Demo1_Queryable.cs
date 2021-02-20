@@ -124,7 +124,16 @@ namespace OrmTest
             Console.WriteLine("#### SqlFunc Start ####");
             var db = GetInstance();
             var index= db.Queryable<Order>().Select(it => SqlFunc.CharIndex("a", "cccacc")).First();
-
+            var dt = DateTime.Now.Date;
+            var list2 = db.Queryable<Order>()
+                .Where(it =>   SqlFunc.ToDateShort(it.CreateTime) == DateTime.Now.Date)
+                .Select(it=> new {
+                     date= SqlFunc.ToDateShort(it.CreateTime),
+                     datetime=it.CreateTime
+                })
+               .ToList();
+            var list3 = db.Queryable<Order>().Where(it => it.CreateTime.Date == SqlFunc.Oracle_ToDate("2021-1-21", "yyyy-MM-dd")).ToList();
+            var list4 = db.Queryable<Order>().Select(it => SqlFunc.Oracle_ToChar(DateTime.Now, "yyyy-MM-dd")).ToList();
             Console.WriteLine("#### SqlFunc  End ####");
         }
 

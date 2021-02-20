@@ -65,7 +65,7 @@ namespace SqlSugar
         {
             return thisValue.Equals(parameterValue);
         }
-        public new static bool EqualsNull(object thisValue, object parameterValue)
+        public  static bool EqualsNull(object thisValue, object parameterValue)
         {
             return thisValue.Equals(parameterValue);
         }
@@ -98,6 +98,7 @@ namespace SqlSugar
         /// <param name="value"></param>
         /// <returns></returns>
         public static DateTime ToDate(object value) { return value.ObjToDate(); }
+        public static DateTime ToDateShort(object value) { return value.ObjToDate(); }
         /// <summary>
         ///HH:mm:ss 
         /// </summary>
@@ -119,7 +120,7 @@ namespace SqlSugar
         public static TResult AggregateMax<TResult>(TResult thisValue) { throw new NotSupportedException("Can only be used in expressions"); }
         public static int AggregateCount<TResult>(TResult thisValue) { throw new NotSupportedException("Can only be used in expressions"); }
         public static int AggregateDistinctCount<TResult>(TResult thisValue) { throw new NotSupportedException("Can only be used in expressions"); }
-        public static TResult MappingColumn<TResult>(TResult oldColumnName,string newColumnName) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static TResult MappingColumn<TResult>(TResult type,string newColumnName) { throw new NotSupportedException("Can only be used in expressions"); }
         /// <summary>
         ///Example: new NewT(){name=SqlFunc.GetSelfAndAutoFill(it)}  Generated SQL   it.*
         /// </summary>
@@ -137,5 +138,10 @@ namespace SqlSugar
         public static Subqueryable<T> Subqueryable<T>() where T:class,new(){ throw new NotSupportedException("Can only be used in expressions");}
         public static CaseThen  IF(bool condition) { throw new NotSupportedException("Can only be used in expressions"); }
         public static int CharIndex(string findChar,string searchValue) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static int BitwiseAnd(int left, int right) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static int BitwiseInclusiveOR(int left, int right) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static DateTime Oracle_ToDate(string date,string format) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static string Oracle_ToChar(DateTime date, string format) { throw new NotSupportedException("Can only be used in expressions"); }
+        public static int SqlServer_DateDiff(string dateType,DateTime date1,DateTime date2) { throw new NotSupportedException("Can only be used in expressions"); }
     }
 }

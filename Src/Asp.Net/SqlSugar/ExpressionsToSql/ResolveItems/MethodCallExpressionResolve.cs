@@ -154,6 +154,12 @@ namespace SqlSugar
             try
             {
                 var constValue = ExpressionTool.DynamicInvoke(express);
+                if (constValue is MapperSql)
+                {
+                    constValue = (constValue as MapperSql).Sql;
+                    base.AppendValue(parameter, isLeft, constValue);
+                    return;
+                }
                 parameter.BaseParameter.CommonTempData = constValue;
                 var parameterName = base.AppendParameter(constValue);
                 if (parameter.BaseParameter.CommonTempData != null && parameter.BaseParameter.CommonTempData.Equals(CommonTempDataType.Result))
@@ -512,6 +518,10 @@ namespace SqlSugar
                 {
                     name = "To" + TempParseType.Name;
                 }
+                else if (name == "IsNullOrWhiteSpace")
+                {
+                    name = "IsNullOrEmpty";
+                }
                 switch (name)
                 {
                     case "IIF":
@@ -648,7 +658,7 @@ namespace SqlSugar
                     case "MappingColumn":
                         var mappingColumnResult = this.Context.DbMehtods.MappingColumn(model);
                         var isValid = model.Args[0].IsMember && model.Args[1].IsMember == false;
-                        Check.Exception(!isValid, "SqlFunc.MappingColumn parameters error, The property name on the left, string value on the right");
+                        //Check.Exception(!isValid, "SqlFunc.MappingColumn parameters error, The property name on the left, string value on the right");
                         this.Context.Parameters.RemoveAll(it => it.ParameterName == model.Args[1].MemberName.ObjToString());
                         return mappingColumnResult;
                     case "IsNull":
@@ -664,6 +674,18 @@ namespace SqlSugar
                         return this.Context.DbMehtods.GetRandom();
                     case "CharIndex":
                         return this.Context.DbMehtods.CharIndex(model);
+                    case "BitwiseAnd":
+                        return this.Context.DbMehtods.BitwiseAnd(model);
+                    case "BitwiseInclusiveOR":
+                        return this.Context.DbMehtods.BitwiseInclusiveOR(model);
+                    case "ToDateShort":
+                        return this.Context.DbMehtods.ToDateShort(model);
+                    case "Oracle_ToChar":
+                        return this.Context.DbMehtods.Oracle_ToChar(model);
+                    case "Oracle_ToDate":
+                        return this.Context.DbMehtods.Oracle_ToDate(model);
+                    case "SqlServer_DateDiff":
+                        return this.Context.DbMehtods.SqlServer_DateDiff(model);
                     default:
                         break;
                 }
@@ -687,6 +709,10 @@ namespace SqlSugar
             if (IsParseMethod(expression))
                 return true;
             if (expression.Method.Name == "IsNullOrEmpty" && expression.Method.DeclaringType == UtilConstants.StringType)
+            {
+                return true;
+            }
+            if (expression.Method.Name == "IsNullOrWhiteSpace" && expression.Method.DeclaringType == UtilConstants.StringType)
             {
                 return true;
             }

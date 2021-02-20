@@ -6,11 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 namespace SqlSugar
 {
+    
     public class InstanceFactory
     {
         static Assembly assembly = Assembly.Load(UtilConstants.AssemblyName);
         static Dictionary<string, Type> typeCache = new Dictionary<string, Type>();
-
+        public static bool NoCache = false;
 
         public static void RemoveCache()
         {
@@ -23,6 +24,14 @@ namespace SqlSugar
             if (currentConnectionConfig.DbType == DbType.SqlServer)
             {
                 return new SqlServerQueryable<T>();
+            }
+            else  if (currentConnectionConfig.DbType == DbType.MySql)
+            {
+                return new MySqlQueryable<T>();
+            }
+            else if (currentConnectionConfig.DbType == DbType.PostgreSQL)
+            {
+                return new PostgreSQLQueryable<T>();
             }
             else
             {
@@ -245,6 +254,10 @@ namespace SqlSugar
             {
                 return new SqlServerDbBind();
             }
+            else if (currentConnectionConfig.DbType == DbType.MySql)
+            {
+                return new MySqlDbBind();
+            }
             else
             {
                 IDbBind result = CreateInstance<IDbBind>(GetClassName(currentConnectionConfig.DbType.ToString(), "DbBind"));
@@ -343,6 +356,26 @@ namespace SqlSugar
 
         private static Restult CreateInstance<Restult>(string className, params Type[] types)
         {
+            try
+            {
+                if (NoCache)
+                {
+                    return NoCacheGetCacheInstance<Restult>(className, types);
+                }
+                else
+                {
+                    return GetCacheInstance<Restult>(className, types);
+                }
+            }
+            catch  
+            {
+                NoCache = true;
+                return NoCacheGetCacheInstance<Restult>(className, types);
+            }
+        }
+
+        private static Restult GetCacheInstance<Restult>(string className, Type[] types)
+        {
             var cacheKey = className + string.Join(",", types.Select(it => it.FullName));
             Type type;
             if (typeCache.ContainsKey(cacheKey))
@@ -364,7 +397,34 @@ namespace SqlSugar
             var result = (Restult)Activator.CreateInstance(type, true);
             return result;
         }
+        private static Restult NoCacheGetCacheInstance<Restult>(string className, Type[] types)
+        {
+          
+            Type type = Type.GetType(className + "`" + types.Length, true).MakeGenericType(types);
+            var result = (Restult)Activator.CreateInstance(type, true);
+            return result;
+        }
+
         public static T CreateInstance<T>(string className)
+        {
+            try
+            {
+                if (NoCache)
+                {
+                    return NoCacheGetCacheInstance<T>(className);
+                }
+                else
+                {
+                    return GetCacheInstance<T>(className);
+                }
+            }
+            catch  
+            {
+                return NoCacheGetCacheInstance<T>(className);
+            }
+        }
+
+        private static T GetCacheInstance<T>(string className)
         {
             Type type;
             if (typeCache.ContainsKey(className))
@@ -383,6 +443,12 @@ namespace SqlSugar
                     }
                 }
             }
+            var result = (T)Activator.CreateInstance(type, true);
+            return result;
+        }
+        private static T NoCacheGetCacheInstance<T>(string className)
+        {
+            Type  type = assembly.GetType(className);
             var result = (T)Activator.CreateInstance(type, true);
             return result;
         }

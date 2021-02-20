@@ -37,7 +37,7 @@ namespace SqlSugar
         private static readonly MethodInfo getInt32 = typeof(IDataRecord).GetMethod("GetInt32", new Type[] { typeof(int) });
         private static readonly MethodInfo getInt64 = typeof(IDataRecord).GetMethod("GetInt64", new Type[] { typeof(int) });
         private static readonly MethodInfo getString = typeof(IDataRecord).GetMethod("GetString", new Type[] { typeof(int) });
-        private static readonly MethodInfo getConvertValueMethod = typeof(IDataRecordExtensions).GetMethod("GetConvertValue");
+        //private static readonly MethodInfo getConvertValueMethod = typeof(IDataRecordExtensions).GetMethod("GetConvertValue");
         private static readonly MethodInfo getdatetimeoffset = typeof(IDataRecordExtensions).GetMethod("Getdatetimeoffset");
         private static readonly MethodInfo getdatetimeoffsetDate = typeof(IDataRecordExtensions).GetMethod("GetdatetimeoffsetDate");
         private static readonly MethodInfo getStringGuid = typeof(IDataRecordExtensions).GetMethod("GetStringGuid");
@@ -123,6 +123,10 @@ namespace SqlSugar
                         if (this.ReaderKeys.Any(it => it.Equals(fileName, StringComparison.CurrentCultureIgnoreCase)))
                         {
                             BindField(generator, result, columnInfo, ReaderKeys.First(it => it.Equals(fileName, StringComparison.CurrentCultureIgnoreCase)));
+                        }
+                        else if (this.ReaderKeys.Any(it => it.Equals(columnInfo.PropertyName, StringComparison.CurrentCultureIgnoreCase)))
+                        {
+                            BindField(generator, result, columnInfo, ReaderKeys.First(it => it.Equals(columnInfo.PropertyName, StringComparison.CurrentCultureIgnoreCase)));
                         }
                     }
                 }
@@ -219,7 +223,7 @@ namespace SqlSugar
                 }
                 else if (bindPropertyType == UtilConstants.StringType&&dbTypeName?.ToLower()== "timestamp")
                 {
-                    method = getConvertValueMethod.MakeGenericMethod(columnInfo.PropertyInfo.PropertyType); ;
+                    method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
                 }
                 else if (bindPropertyType == UtilConstants.StringType)
                 {
@@ -227,7 +231,7 @@ namespace SqlSugar
                 }
                 else
                 {
-                    method = getConvertValueMethod.MakeGenericMethod(columnInfo.PropertyInfo.PropertyType);
+                    method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
                 }
 
                 if (method.IsVirtual)
@@ -260,7 +264,10 @@ namespace SqlSugar
                         method = isNullableType ? getConvertBoolean : getBoolean;
                     break;
                 case CSharpDataType.@string:
-                    CheckType(bind.StringThrow, bindProperyTypeName, validPropertyName, propertyName);
+                    if (this.Context.CurrentConnectionConfig.DbType != DbType.Oracle)
+                    {
+                        CheckType(bind.StringThrow, bindProperyTypeName, validPropertyName, propertyName);
+                    }
                     method = getString;
                     if (bindProperyTypeName == "guid")
                     {
@@ -273,6 +280,8 @@ namespace SqlSugar
                         method = isNullableType ? getConvertDateTime : getDateTime;
                     if (bindProperyTypeName == "datetime" && dbTypeName.ToLower() == "time")
                         method = isNullableType ? getConvertTime : getTime;
+                    if (bindProperyTypeName == "datetimeoffset")
+                        method = isNullableType ? getConvertdatetimeoffset : getdatetimeoffset;
                     break;
                 case CSharpDataType.@decimal:
                     CheckType(bind.DecimalThrow, bindProperyTypeName, validPropertyName, propertyName);
@@ -292,11 +301,11 @@ namespace SqlSugar
                     }
                     if (bindPropertyType == UtilConstants.DecType)
                     {
-                        method = getConvertValueMethod.MakeGenericMethod(bindPropertyType);
+                        method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
                     }
                     if (bindPropertyType == UtilConstants.IntType)
                     {
-                        method = getConvertValueMethod.MakeGenericMethod(bindPropertyType);
+                        method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
                     }
                     break;
                 case CSharpDataType.Guid:
@@ -325,8 +334,10 @@ namespace SqlSugar
                     if (bindProperyTypeName == "datetime")
                         method = isNullableType ? getConvertdatetimeoffsetDate : getdatetimeoffsetDate;
                     break;
+                case CSharpDataType.Single:
+                    break;
                 default:
-                    method = getConvertValueMethod.MakeGenericMethod(bindPropertyType);
+                    method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
                     break;
             }
             if (method == null && bindPropertyType == UtilConstants.StringType)
@@ -335,7 +346,7 @@ namespace SqlSugar
             }
             if (bindPropertyType == UtilConstants.ObjType)
             {
-                method = getConvertValueMethod.MakeGenericMethod(bindPropertyType);
+                method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);
             }
             if (method == null)
                 method = isNullableType ? getOtherNull.MakeGenericMethod(bindPropertyType) : getOther.MakeGenericMethod(bindPropertyType);

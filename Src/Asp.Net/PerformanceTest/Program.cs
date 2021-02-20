@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using PerformanceTest.Models;
 using PerformanceTest.TestItems;
 using SqlSugar;
 
@@ -16,10 +17,10 @@ namespace PerformanceTest
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            InitData();
+             InitData();
 
-            var type = DemoType.Insert;
-            var ormType = OrmType.EF;
+            var type = DemoType.OneToMany;
+            var ormType = OrmType.SqlSugar;
             switch (type)
             {
                 case DemoType.GetAll:
@@ -33,6 +34,12 @@ namespace PerformanceTest
                     break;
                 case DemoType.Insert:
                     new TestInsert().Init(ormType);
+                    break;
+                case DemoType.Like:
+                    new TestLike().Init(ormType);
+                    break;
+                case DemoType.OneToMany:
+                    new TestOneToMany().Init(ormType);
                     break;
                 default:
                     break;
@@ -70,7 +77,20 @@ namespace PerformanceTest
                     });
                 }
             }
-            conn.Insertable(test).ExecuteCommand();
+            conn.CodeFirst.InitTables<Group>();
+            // conn.DbMaintenance.TruncateTable<Group>();
+            conn.CodeFirst.InitTables<User>();
+            //conn.DbMaintenance.TruncateTable<User>();
+            if (conn.Queryable<Group>().Count() < 500)
+            {
+                for (int i = 0; i < 1000; i++)
+                {
+                    conn.Insertable(new Group { Id = i, Name = i + Guid.NewGuid().ToString() }).ExecuteCommand();
+                    conn.Insertable(new User() { AGroupId = i, Id = i + 1 }).ExecuteCommand();
+                    conn.Insertable(new User() { AGroupId = i, Id = i + 200000 }).ExecuteCommand();
+                }
+                conn.Insertable(test).ExecuteCommand();
+            }
         }
 
         enum DemoType
@@ -78,7 +98,9 @@ namespace PerformanceTest
             GetAll,
             GetById,
             GetSql,
-            Insert
+            Insert,
+            Like,
+            OneToMany
         }
     }
 }

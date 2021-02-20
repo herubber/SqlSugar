@@ -136,26 +136,22 @@ namespace SqlSugar
             var result = dr.GetInt32(i);
             return result;
         }
-        public static T GetConvertValue<T>(this IDataRecord dr, int i)
-        {
-            try
-            {
-                if (dr.IsDBNull(i))
-                {
-                    return default(T);
-                }
-                var result = dr.GetValue(i);
-                return UtilMethods.To<T>(result);
-            }
-            catch (Exception ex)
-            {
-                if (dr.GetFieldType(i) == UtilConstants.DateType)
-                {
-                    return UtilMethods.To<T>(dr.GetConvertDouble(i));
-                }
-                throw new Exception(ex.Message);
-            }
-        }
+        //public static T GetConvertValue<T>(this IDataRecord dr, int i)
+        //{
+        //    try
+        //    {
+        //        if (dr.IsDBNull(i))
+        //        {
+        //            return default(T);
+        //        }
+        //        var result = dr.GetValue(i);
+        //        return UtilMethods.To<T>(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return OtherException<T>(dr, i, ex);
+        //    }
+        //}
 
         public static long? GetConvetInt64(this IDataRecord dr, int i)
         {
@@ -205,8 +201,16 @@ namespace SqlSugar
             {
                 return default(DateTimeOffset);
             }
-            var result = (DateTimeOffset)dr.GetValue(i);
-            return result;
+            var date = dr.GetValue(i);
+            if (date is DateTime)
+            {
+               return UtilMethods.GetDateTimeOffsetByDateTime((DateTime)(date));
+            }
+            else
+            {
+                var result = (DateTimeOffset)date;
+                return result;
+            }
         }
 
         public static DateTimeOffset? GetConvertdatetimeoffset(this IDataRecord dr, int i)
@@ -215,8 +219,16 @@ namespace SqlSugar
             {
                 return default(DateTimeOffset);
             }
-            var result = (DateTimeOffset)dr.GetValue(i);
-            return result;
+            var date = dr.GetValue(i);
+            if (date is DateTime)
+            {
+                return UtilMethods.GetDateTimeOffsetByDateTime((DateTime)(date));
+            }
+            else
+            {
+                var result = (DateTimeOffset)date;
+                return result;
+            }
         }
 
 
@@ -236,19 +248,25 @@ namespace SqlSugar
             {
                 return null;
             }
-            var result = dr.GetValue(i);
-            return UtilMethods.To<T>(result);
+            return GetOther<T>(dr,i);
 
         }
 
         public static T GetOther<T>(this IDataReader dr, int i)
         {
-            if (dr.IsDBNull(i))
+            try
             {
-                return default(T);
+                if (dr.IsDBNull(i))
+                {
+                    return default(T);
+                }
+                var result = dr.GetValue(i);
+                return UtilMethods.To<T>(result);
             }
-            var result = dr.GetValue(i);
-            return UtilMethods.To<T>(result);
+            catch (Exception ex)
+            {
+                return OtherException<T>(dr, i, ex);
+            }
         }
 
         public static T GetJson<T>(this IDataReader dr, int i)
@@ -300,6 +318,28 @@ namespace SqlSugar
         public static object GetEntity(this IDataReader dr, SqlSugarProvider context)
         {
             return null;
+        }
+
+
+        private static T OtherException<T>(IDataRecord dr, int i, Exception ex)
+        {
+            if (dr.GetFieldType(i) == UtilConstants.DateType)
+            {
+                return UtilMethods.To<T>(dr.GetConvertDouble(i));
+            }
+            if (dr.GetFieldType(i) == UtilConstants.GuidType)
+            {
+                var data = dr.GetString(i);
+                if (data.ToString() == "")
+                {
+                    return UtilMethods.To<T>(default(T));
+                }
+                else
+                {
+                    return UtilMethods.To<T>(Guid.Parse(data.ToString()));
+                }
+            }
+            throw new Exception(ex.Message);
         }
 
         #endregion

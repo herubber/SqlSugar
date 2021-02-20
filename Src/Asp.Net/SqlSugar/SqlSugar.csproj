@@ -88,7 +88,16 @@
     <Compile Include="Abstract\FilterProvider\FilterProvider.cs" />
     <Compile Include="Abstract\InsertableProvider\InsertableProvider.cs" />
     <Compile Include="Abstract\DeleteProvider\DeleteableProvider.cs" />
-    <Compile Include="Infrastructure\KdbndpInserttable.cs" />
+    <Compile Include="Abstract\SaveableProvider\Storageable.cs" />
+    <Compile Include="Entities\StackTraceInfo.cs" />
+    <Compile Include="Entities\SubInsertTree.cs" />
+    <Compile Include="ExpressionsToSql\Common\MapperExpression.cs" />
+    <Compile Include="ExpressionsToSql\ResolveItems\MapperExpressionResolve.cs" />
+    <Compile Include="ExpressionsToSql\Subquery\Items\SubInnerJoin.cs" />
+    <Compile Include="ExpressionsToSql\Subquery\Items\SubLeftJoin.cs" />
+    <Compile Include="Interface\IStorageable.cs" />
+    <Compile Include="OnlyNet\Compatible.cs" />
+    <Compile Include="OnlyNet\KdbndpInserttable.cs" />
     <Compile Include="Interface\ISubInsertable.cs" />
     <Compile Include="Abstract\InsertableProvider\SubInserable.cs" />
     <Compile Include="Abstract\SaveableProvider\SaveableProvider.cs" />
@@ -138,7 +147,7 @@
     <Compile Include="ExpressionsToSql\Subquery\SubResolve.cs" />
     <Compile Include="ExpressionsToSql\Subquery\SubTools.cs" />
     <Compile Include="ExternalServiceInterface\IRazorService.cs" />
-    <Compile Include="Infrastructure\DependencyManagement.cs" />
+    <Compile Include="OnlyNet\DependencyManagement.cs" />
     <Compile Include="ExternalServiceInterface\ISerializeService.cs" />
     <Compile Include="Entities\DefaultServices.cs" />
     <Compile Include="Infrastructure\Mapper.cs" />
@@ -146,6 +155,7 @@
     <Compile Include="Interface\ISqlSugarClient.cs" />
     <Compile Include="Interface\ITenant.cs" />
     <Compile Include="Interface\ISimpleClient.cs" />
+    <Compile Include="Realization\MySql\SqlBuilder\MySqlBlueCopy.cs" />
     <Compile Include="Realization\Oracle\Deleteable\OracleDeleteable.cs" />
     <Compile Include="Realization\Oracle\Insertable\OracleInsertable.cs" />
     <Compile Include="Realization\Oracle\Updateable\OracleUpdateable.cs" />
@@ -245,6 +255,7 @@
     <Compile Include="Utilities\Check.cs" />
     <Compile Include="Utilities\DbExtensions.cs" />
     <Compile Include="Utilities\ErrorMessage.cs" />
+    <Compile Include="Utilities\UtilExtensions.cs" />
     <Compile Include="Utilities\UtilRandom.cs" />
     <Compile Include="Utilities\ValidateExtensions.cs" />
     <Compile Include="Utilities\UtilConstants.cs" />
@@ -336,7 +347,9 @@
     <Content Include="References\Oracle.ManagedDataAccess.dll" />
     <Content Include="References\System.Data.SQLite.dll" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="SqlSugar.nuspec" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

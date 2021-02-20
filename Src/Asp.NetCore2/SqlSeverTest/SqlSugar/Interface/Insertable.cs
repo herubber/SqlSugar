@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SqlSugar
 {
-    public interface IInsertable<T>
+    public partial interface IInsertable<T>
     {
         InsertBuilder InsertBuilder { get; set; }
         int ExecuteCommand();
@@ -29,22 +29,15 @@ namespace SqlSugar
         IInsertable<T> IgnoreColumns(params string[]columns);
         IInsertable<T> IgnoreColumns(bool ignoreNullColumn, bool isOffIdentity = false);
 
-        ISubInsertable<T> AddSubList(Expression<Func<T, object>> SubForeignKey);
+        ISubInsertable<T> AddSubList(Expression<Func<T, object>> subForeignKey);
+        ISubInsertable<T> AddSubList(Expression<Func<T, SubInsertTree>> tree);
 
         IInsertable<T> EnableDiffLogEvent(object businessData = null);
         IInsertable<T> RemoveDataCache();
         KeyValuePair<string, List<SugarParameter>> ToSql();
         SqlServerBlueCopy UseSqlServer();
+        MySqlBlueCopy<T> UseMySql();
         void AddQueue();
 
-        #region Obsolete
-        [Obsolete("use IgnoreColumns(string[] columns")]
-
-        IInsertable<T> IgnoreColumns(Func<string, bool> ignoreColumMethod);
-        [Obsolete("use InsertColumns(string[] columns")]
-        IInsertable<T> InsertColumns(Func<string, bool> insertColumMethod); 
-        [Obsolete("use IgnoreColumns(bool isNoInsertNull, bool isOffIdentity = false)")]
-        IInsertable<T> Where(bool ignoreNullColumn, bool isOffIdentity = false);
-        #endregion
     }
 }

@@ -7,6 +7,7 @@ namespace SqlSugar
 {
     public interface ISimpleClient<T> where T : class, new()
     {
+        SimpleClient<ChangeType> Change<ChangeType>() where ChangeType : class, new();
         IDeleteable<T> AsDeleteable();
         IInsertable<T> AsInsertable(List<T> insertObjs);
         IInsertable<T> AsInsertable(T insertObj);
@@ -34,6 +35,7 @@ namespace SqlSugar
         bool InsertRange(List<T> insertObjs);
         bool InsertRange(T[] insertObjs);
         int InsertReturnIdentity(T insertObj);
+        long InsertReturnBigIdentity(T insertObj);
         bool IsAny(Expression<Func<T, bool>> whereExpression);
         bool Update(Expression<Func<T, T>> columns, Expression<Func<T, bool>> whereExpression);
         bool Update(T updateObj);
@@ -60,6 +62,7 @@ namespace SqlSugar
         Task<bool> InsertRangeAsync(List<T> insertObjs);
         Task<bool> InsertRangeAsync(T[] insertObjs);
         Task<int> InsertReturnIdentityAsync(T insertObj);
+        Task<long> InsertReturnBigIdentityAsync(T insertObj);
         Task<bool> IsAnyAsync(Expression<Func<T, bool>> whereExpression);
         Task<bool> UpdateAsync(Expression<Func<T, T>> columns, Expression<Func<T, bool>> whereExpression);
         Task<bool> UpdateAsync(T updateObj);

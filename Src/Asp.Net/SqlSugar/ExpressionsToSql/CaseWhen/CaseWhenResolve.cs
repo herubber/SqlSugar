@@ -26,7 +26,10 @@ namespace SqlSugar
             }
             else if (context.IsSingle)
             {
-                this.context.SingleTableNameSubqueryShortName = (context.Expression as LambdaExpression).Parameters.First().Name;
+                if ((context.Expression as LambdaExpression) != null)
+                {
+                    this.context.SingleTableNameSubqueryShortName = (context.Expression as LambdaExpression).Parameters.First().Name;
+                }
             }
             while (currentExpression != null)
             {
@@ -45,8 +48,15 @@ namespace SqlSugar
             {
                 var isFirst = allMethods.First() == methodExp;
                 var isLast = allMethods.Last() == methodExp;
-                var sql = SubTools.GetMethodValue(this.context, methodExp.Arguments[0], this.context.IsSingle ? ResolveExpressType.WhereSingle : ResolveExpressType.WhereMultiple);
-                sqls.Add(new KeyValuePair<string, string>(methodExp.Method.Name, sql));
+                if (methodExp.Arguments.Count == 0)
+                {
+                    sqls.Add(new KeyValuePair<string, string>(methodExp.Method.Name, "null"));
+                }
+                else
+                {
+                    var sql = SubTools.GetMethodValue(this.context, methodExp.Arguments[0], this.context.IsSingle ? ResolveExpressType.WhereSingle : ResolveExpressType.WhereMultiple);
+                    sqls.Add(new KeyValuePair<string, string>(methodExp.Method.Name, sql));
+                }
             }
             var result = this.context.DbMehtods.CaseWhen(sqls);
             return result;

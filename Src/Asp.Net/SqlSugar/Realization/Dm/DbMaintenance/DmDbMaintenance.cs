@@ -426,14 +426,22 @@ namespace SqlSugar
             var comments = this.Context.Utilities.GetReflectionInoCacheInstance().GetOrCreate(cacheKey,
                 () =>
                 {
-                    string sql = "SELECT TVNAME AS TableName, COLNAME,COMMENT$ AS ColumnDescription   from SYSCOLUMNCOMMENTS   WHERE TVNAME='" + tableName.ToUpper() + "' ORDER BY TVNAME";
+                    string sql = "SELECT TVNAME AS TableName, COLNAME as DbColumnName ,COMMENT$ AS ColumnDescription   from SYSCOLUMNCOMMENTS   WHERE TVNAME='" + tableName.ToUpper() + "' ORDER BY TVNAME";
                     var oldIsEnableLog = this.Context.Ado.IsEnableLogEvent;
                     this.Context.Ado.IsEnableLogEvent = false;
                     var pks = this.Context.Ado.SqlQuery<DbColumnInfo>(sql);
                     this.Context.Ado.IsEnableLogEvent = oldIsEnableLog;
                     return pks;
                 });
-            return comments.HasValue() ? comments.First(it => it.DbColumnName.Equals(filedName, StringComparison.CurrentCultureIgnoreCase)).ColumnDescription : "";
+            if (comments.HasValue())
+            {
+                var comment = comments.FirstOrDefault(it => it.DbColumnName.Equals(filedName, StringComparison.CurrentCultureIgnoreCase));
+                return comment?.ColumnDescription;
+            }
+            else
+            {
+                return "";
+            }
 
         }
 

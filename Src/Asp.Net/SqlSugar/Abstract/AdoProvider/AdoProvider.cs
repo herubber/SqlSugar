@@ -40,6 +40,7 @@ namespace SqlSugar
         internal bool OldClearParameters { get; set; }
         public IDataParameterCollection DataReaderParameters { get; set; }
         public TimeSpan SqlExecutionTime { get { return AfterTime - BeforeTime; } }
+        public StackTraceInfo SqlStackTrace { get { return UtilMethods.GetStackTrace(); } }
         public bool IsDisableMasterSlaveSeparation { get; set; }
         internal DateTime BeforeTime = DateTime.MinValue;
         internal DateTime AfterTime = DateTime.MinValue;
@@ -68,6 +69,7 @@ namespace SqlSugar
         public virtual Action<DiffLogModel> DiffLogEvent => this.Context.CurrentConnectionConfig.AopEvents?.OnDiffLogEvent;
         public virtual List<IDbConnection> SlaveConnections { get; set; }
         public virtual IDbConnection MasterConnection { get; set; }
+        public virtual CancellationToken? CancellationToken { get; set; }
         #endregion
 
         #region Connection
@@ -259,6 +261,27 @@ namespace SqlSugar
         #endregion
 
         #region Core
+        public virtual int ExecuteCommandWithGo(string sql, params SugarParameter[] parameters)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return 0;
+            if (!sql.ToLower().Contains("go"))
+            {
+                return ExecuteCommand(sql);
+            }
+            System.Collections.ArrayList al = new System.Collections.ArrayList();
+            System.Text.RegularExpressions.Regex reg = new System.Text.RegularExpressions.Regex(@"^(\s*)go(\s*)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.ExplicitCapture);
+            al.AddRange(reg.Split(sql));
+            int count = 0;
+            foreach (string item in al)
+            {
+                if (item.HasValue())
+                {
+                    count += ExecuteCommand(item, parameters);
+                }
+            }
+            return count;
+        }
         public virtual int ExecuteCommand(string sql, params SugarParameter[] parameters)
         {
             try
@@ -311,7 +334,7 @@ namespace SqlSugar
                     sqlCommand.Parameters.Clear();
                 ExecuteAfter(sql, parameters);
                 SetConnectionEnd(sql);
-                if (this.Context.CurrentConnectionConfig.DbType == DbType.Sqlite)
+                if (SugarCompatible.IsFramework || this.Context.CurrentConnectionConfig.DbType != DbType.Sqlite)
                     sqlCommand.Dispose();
                 return sqlDataReader;
             }
@@ -405,7 +428,11 @@ namespace SqlSugar
                     ExecuteProcessingSQL(ref sql, parameters);
                 ExecuteBefore(sql, parameters);
                 var sqlCommand = GetCommand(sql, parameters);
-                int count = await sqlCommand.ExecuteNonQueryAsync();
+                int count;
+                if (this.CancellationToken == null)
+                    count=await sqlCommand.ExecuteNonQueryAsync();
+                else
+                    count=await sqlCommand.ExecuteNonQueryAsync(this.CancellationToken.Value);
                 if (this.IsClearParameters)
                     sqlCommand.Parameters.Clear();
                 ExecuteAfter(sql, parameters);
@@ -439,15 +466,19 @@ namespace SqlSugar
                     ExecuteProcessingSQL(ref sql, parameters);
                 ExecuteBefore(sql, parameters);
                 var sqlCommand = GetCommand(sql, parameters);
-                var sqlDataReader = await sqlCommand.ExecuteReaderAsync(this.IsAutoClose() ? CommandBehavior.CloseConnection : CommandBehavior.Default);
+                DbDataReader sqlDataReader;
+                if(this.CancellationToken==null)
+                    sqlDataReader=await sqlCommand.ExecuteReaderAsync(this.IsAutoClose() ? CommandBehavior.CloseConnection : CommandBehavior.Default);
+                else
+                    sqlDataReader=await sqlCommand.ExecuteReaderAsync(this.IsAutoClose() ? CommandBehavior.CloseConnection : CommandBehavior.Default,this.CancellationToken.Value);
                 if (isSp)
                     DataReaderParameters = sqlCommand.Parameters;
                 if (this.IsClearParameters)
                     sqlCommand.Parameters.Clear();
                 ExecuteAfter(sql, parameters);
                 SetConnectionEnd(sql);
-                if (this.Context.CurrentConnectionConfig.DbType == DbType.Sqlite)
-                    sqlCommand.Dispose(); 
+                if (SugarCompatible.IsFramework || this.Context.CurrentConnectionConfig.DbType != DbType.Sqlite)
+                    sqlCommand.Dispose();
                 return sqlDataReader;
             }
             catch (Exception ex)
@@ -471,7 +502,11 @@ namespace SqlSugar
                     ExecuteProcessingSQL(ref sql, parameters);
                 ExecuteBefore(sql, parameters);
                 var sqlCommand = GetCommand(sql, parameters);
-                var scalar = await sqlCommand.ExecuteScalarAsync();
+                object scalar;
+                if(CancellationToken==null)
+                    scalar=await sqlCommand.ExecuteScalarAsync();
+                else
+                    scalar = await sqlCommand.ExecuteScalarAsync(this.CancellationToken.Value);
                 //scalar = (scalar == null ? 0 : scalar);
                 if (this.IsClearParameters)
                     sqlCommand.Parameters.Clear();
@@ -1165,6 +1200,10 @@ namespace SqlSugar
         #endregion
 
         #region  Helper
+        public virtual void RemoveCancellationToken()
+        {
+            this.CancellationToken = null;
+        }
         private void Async()
         {
             if (this.Context.Root != null & this.Context.Root.AsyncId == null)
@@ -1358,7 +1397,14 @@ namespace SqlSugar
                             {
                                 sql = sql.Replace("@" + item.ParameterName.Substring(1), newValues.ToArray().ToJoinSqlInVals());
                             }
-                            sql = sql.Replace(item.ParameterName, newValues.ToArray().ToJoinSqlInVals());
+                            if (item.ParameterName.Substring(0, 1) != this.SqlParameterKeyWord)
+                            {
+                                sql = sql.Replace(this.SqlParameterKeyWord+item.ParameterName, newValues.ToArray().ToJoinSqlInVals());
+                            }
+                            else
+                            {
+                                sql = sql.Replace(item.ParameterName, newValues.ToArray().ToJoinSqlInVals());
+                            }
                             item.Value = DBNull.Value;
                         }
                     }

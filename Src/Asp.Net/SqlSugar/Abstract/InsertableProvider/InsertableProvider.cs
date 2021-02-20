@@ -228,7 +228,10 @@ namespace SqlSugar
             };
             return this;
         }
-
+        public MySqlBlueCopy<T> UseMySql()
+        {
+            return new MySqlBlueCopy<T>(this.Context, this.SqlBuilder, InsertObjs);
+        }
         public SqlServerBlueCopy UseSqlServer()
         {
             PreToSql();
@@ -239,6 +242,7 @@ namespace SqlSugar
             result.InsertBuilder = this.InsertBuilder;
             result.Builder = this.SqlBuilder;
             result.Context = this.Context;
+            result.Inserts=this.InsertObjs;
             return result;
         }
 
@@ -262,21 +266,37 @@ namespace SqlSugar
             {
                 return new SubInsertable<T>();
             }
-            string subMemberName;
-            object sublist;
             SubInsertable<T> result = new SubInsertable<T>();
-            result.GetList(this.InsertObjs,items, out subMemberName, out sublist);
             result.InsertObjects = this.InsertObjs;
             result.Context = this.Context;
-            result.SubList = new Dictionary<string, object>();
-            result.SubList.Add(subMemberName, sublist);
+            result.SubList = new List<SubInsertTreeExpression>();
+            result.SubList.Add(new SubInsertTreeExpression() { Expression= items });
             result.InsertBuilder = this.InsertBuilder;
             result.Pk = GetPrimaryKeys().First();
             result.Entity = this.EntityInfo;
             return result;
         }
+        public ISubInsertable<T> AddSubList(Expression<Func<T, SubInsertTree>> tree)
+        {
+            Check.Exception(GetPrimaryKeys().Count == 0, typeof(T).Name + " need Primary key");
+            Check.Exception(GetPrimaryKeys().Count > 1, typeof(T).Name + "Multiple primary keys are not supported");
+            //Check.Exception(this.InsertObjs.Count() > 1, "SubInserable No Support Insertable(List<T>)");
+            //Check.Exception(items.ToString().Contains(".First().")==false, items.ToString()+ " not supported ");
+            if (this.InsertObjs == null || this.InsertObjs.Count() == 0)
+            {
+                return new SubInsertable<T>();
+            }
+            SubInsertable<T> result = new SubInsertable<T>();
+            result.InsertObjects = this.InsertObjs;
+            result.Context = this.Context;
+            result.SubList = new List<SubInsertTreeExpression>();
+            result.InsertBuilder = this.InsertBuilder;
+            result.Pk = GetPrimaryKeys().First();
+            result.Entity = this.EntityInfo;
+            result.AddSubList(tree);
+            return result;
+        }
 
-  
         #endregion
 
         #region Protected Methods
@@ -455,13 +475,14 @@ namespace SqlSugar
                 {
                     columnInfo.IsArray = true;
                 }
-                if (columnInfo.PropertyType.IsEnum())
+                if (columnInfo.PropertyType.IsEnum()&& columnInfo.Value!=null)
                 {
                     columnInfo.Value = Convert.ToInt64(columnInfo.Value);
                 }
                 if (column.IsJson&& columnInfo.Value!=null)
                 {
-                    columnInfo.Value = this.Context.Utilities.SerializeObject(columnInfo.Value);
+                    if(columnInfo.Value!=null)
+                       columnInfo.Value = this.Context.Utilities.SerializeObject(columnInfo.Value);
                 }
                 var tranColumn=EntityInfo.Columns.FirstOrDefault(it => it.IsTranscoding && it.DbColumnName.Equals(column.DbColumnName, StringComparison.CurrentCultureIgnoreCase));
                 if (tranColumn!=null&&columnInfo.Value.HasValue()) {
@@ -624,7 +645,7 @@ namespace SqlSugar
                         DiffLogColumnInfo addItem = new DiffLogColumnInfo();
                         addItem.Value = row[col.ColumnName];
                         addItem.ColumnName = col.ColumnName;
-                        addItem.ColumnDescription = this.EntityInfo.Columns.First(it => it.DbColumnName.Equals(col.ColumnName, StringComparison.CurrentCultureIgnoreCase)).ColumnDescription;
+                        addItem.ColumnDescription = this.EntityInfo.Columns.Where(it=>it.DbColumnName!=null).First(it => it.DbColumnName.Equals(col.ColumnName, StringComparison.CurrentCultureIgnoreCase)).ColumnDescription;
                         item.Columns.Add(addItem);
                     }
                     result.Add(item);
@@ -648,24 +669,5 @@ namespace SqlSugar
         }
         #endregion
 
-        #region Obsolete
-        [Obsolete]
-        public IInsertable<T> InsertColumns(Func<string, bool> insertColumMethod)
-        {
-            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => insertColumMethod(it.PropertyName)).ToList();
-            return this;
-        }
-        [Obsolete]
-        public IInsertable<T> IgnoreColumns(Func<string, bool> ignoreColumMethod)
-        {
-            this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => !ignoreColumMethod(it.PropertyName)).ToList();
-            return this;
-        }
-        [Obsolete]
-        public IInsertable<T> Where(bool ignoreNullColumn, bool isOffIdentity = false)
-        {
-            return IgnoreColumns(ignoreNullColumn, isOffIdentity);
-        }
-        #endregion
     }
 }

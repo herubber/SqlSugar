@@ -31,6 +31,7 @@ namespace OrmTest
         }
         public static void Init()
         {
+            Insert();
             Queue();
             CodeFirst();
             Updateable();
@@ -38,9 +39,9 @@ namespace OrmTest
             Ado();
             Queryable();
             QueryableAsync();
-            Thread();
-            Thread2();
-            Thread3();
+            //Thread();
+            //Thread2();
+            //Thread3();
         }
     }
 }

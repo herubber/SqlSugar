@@ -26,9 +26,9 @@ namespace SqlSugar
         /// </summary>
         public bool IsAutoCloseConnection { get; set; }
         /// <summary>
-        /// Default SystemTable,If you do not have system table permissions, use attribute
+        /// Default Attribute 
         /// </summary>
-        public InitKeyType InitKeyType = InitKeyType.SystemTable;
+        public InitKeyType InitKeyType = InitKeyType.Attribute;
         /// <summary>
         ///If true, there is only one connection instance in the same thread within the same connection string
         /// </summary>
@@ -51,6 +51,8 @@ namespace SqlSugar
         /// Used for debugging errors or BUG,Used for debugging, which has an impact on Performance
         /// </summary>
         public SugarDebugger Debugger { get; set; }
+
+        public string IndexSuffix { get; set; }
 
         [JsonIgnore]
         public AopEvents AopEvents { get;set; }

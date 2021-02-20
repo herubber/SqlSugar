@@ -41,8 +41,9 @@ namespace SqlSugar
         /// </summary>
         /// <param name="whereClassTypes"></param>
         /// <returns></returns>
-        ISugarQueryable<T> WhereClass<ClassType>(List<ClassType> whereClassList,bool ignoreDefaultValue = false) where ClassType : class, new(); 
-
+        ISugarQueryable<T> WhereClass<ClassType>(List<ClassType> whereClassList,bool ignoreDefaultValue = false) where ClassType : class, new();
+        ISugarQueryable<T> WhereClassByPrimaryKey(List<T> list);
+        ISugarQueryable<T> WhereClassByPrimaryKey(T data) ;
         ISugarQueryable<T> Where(Expression<Func<T, bool>> expression);
         ISugarQueryable<T> Where(string whereString, object parameters = null);
         ISugarQueryable<T> Where(List<IConditionalModel> conditionalModels);
@@ -122,6 +123,12 @@ namespace SqlSugar
         Task<TResult> AvgAsync<TResult>(Expression<Func<T, TResult>> expression);
 
         List<T> ToList();
+
+        Dictionary<string, object> ToDictionary(Expression<Func<T, object>> key, Expression<Func<T, object>> value);
+        Task<Dictionary<string, object>> ToDictionaryAsync(Expression<Func<T, object>> key, Expression<Func<T, object>> value);
+        List<Dictionary<string, object>> ToDictionaryList();
+        Task<List<Dictionary<string, object>>> ToDictionaryListAsync();
+
         T[] ToArray();
         Task<List<T>> ToListAsync();
 
@@ -133,7 +140,8 @@ namespace SqlSugar
         Task<string> ToJsonPageAsync(int pageIndex, int pageSize, RefAsync<int> totalNumber);
         KeyValuePair<string, List<SugarParameter>> ToSql();
 
-
+        List<T> ToTree(Expression<Func<T,IEnumerable<object>>> childListExpression, Expression<Func<T,object>> parentIdExpression,object rootValue);
+        Task<List<T>> ToTreeAsync(Expression<Func<T, IEnumerable<object>>> childListExpression, Expression<Func<T, object>> parentIdExpression, object rootValue);
         DataTable ToDataTable();
         Task<DataTable> ToDataTableAsync();
         DataTable ToDataTablePage(int pageIndex, int pageSize);
@@ -207,6 +215,10 @@ namespace SqlSugar
         TResult Min<TResult>(Expression<Func<T, T2, TResult>> expression);
         TResult Sum<TResult>(Expression<Func<T, T2, TResult>> expression);
         TResult Avg<TResult>(Expression<Func<T, T2, TResult>> expression);
+        Task<TResult> MaxAsync<TResult>(Expression<Func<T, T2, TResult>> expression);
+        Task<TResult> MinAsync<TResult>(Expression<Func<T, T2, TResult>> expression);
+        Task<TResult> SumAsync<TResult>(Expression<Func<T, T2, TResult>> expression);
+        Task<TResult> AvgAsync<TResult>(Expression<Func<T, T2, TResult>> expression);
         #endregion
 
         #region In
@@ -294,6 +306,10 @@ namespace SqlSugar
         TResult Min<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
         TResult Sum<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
         TResult Avg<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
+        Task<TResult> MaxAsync<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
+        Task<TResult> MinAsync<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
+        Task<TResult> SumAsync<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
+        Task<TResult> AvgAsync<TResult>(Expression<Func<T, T2, T3, TResult>> expression);
         #endregion
 
         #region In
@@ -489,6 +505,12 @@ namespace SqlSugar
         ISugarQueryable<T, T2, T3, T4, T5> GroupBy(Expression<Func<T, T2, T3, object>> expression);
         ISugarQueryable<T, T2, T3, T4, T5> GroupBy(Expression<Func<T, T2, T3, T4, object>> expression);
         ISugarQueryable<T, T2, T3, T4, T5> GroupBy(Expression<Func<T, T2, T3, T4, T5, object>> expression);
+        new ISugarQueryable<T, T2, T3, T4,T5> Having(Expression<Func<T, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4,T5> Having(Expression<Func<T, T2, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4,T5> Having(Expression<Func<T, T2, T3, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4,T5> Having(Expression<Func<T, T2, T3, T4, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5> Having(Expression<Func<T, T2, T3, T4,T5, bool>> expression);
+        new ISugarQueryable<T, T2, T3, T4,T5> Having(string whereString, object parameters = null);
         #endregion
 
         #region Aggr
@@ -587,6 +609,13 @@ namespace SqlSugar
         ISugarQueryable<T, T2, T3, T4, T5, T6> GroupBy(Expression<Func<T, T2, T3, T4, object>> expression);
         ISugarQueryable<T, T2, T3, T4, T5, T6> GroupBy(Expression<Func<T, T2, T3, T4, T5, object>> expression);
         ISugarQueryable<T, T2, T3, T4, T5, T6> GroupBy(Expression<Func<T, T2, T3, T4, T5, T6, object>> expression);
+        new ISugarQueryable<T, T2, T3, T4, T5,T6> Having(Expression<Func<T, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5, T6> Having(Expression<Func<T, T2, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5, T6> Having(Expression<Func<T, T2, T3, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5, T6> Having(Expression<Func<T, T2, T3, T4, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5, T6> Having(Expression<Func<T, T2, T3, T4, T5, bool>> expression);
+        ISugarQueryable<T, T2, T3, T4, T5, T6> Having(Expression<Func<T, T2, T3, T4, T5,T6, bool>> expression);
+        new ISugarQueryable<T, T2, T3, T4, T5, T6> Having(string whereString, object parameters = null);
         #endregion
 
         #region Aggr
