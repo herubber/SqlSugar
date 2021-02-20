@@ -31,7 +31,7 @@ namespace SqlSugar
         public virtual string GetTranslationTableName(string name)
         {
             Check.ArgumentNullException(name, string.Format(ErrorMessage.ObjNotExist, "Table Name"));
-            if (name.IsContainsIn("(", ")", SqlTranslationLeft)&&name!= "Dictionary`2")
+            if (!name.Contains("<>f__AnonymousType") &&name.IsContainsIn("(", ")", SqlTranslationLeft)&&name!= "Dictionary`2")
             {
                 return name;
             }
@@ -69,6 +69,10 @@ namespace SqlSugar
         public virtual string GetTranslationColumnName(string propertyName)
         {
             if (propertyName.Contains(SqlTranslationLeft)) return propertyName;
+            if (propertyName.Contains("."))
+            {
+                return string.Join(".", propertyName.Split('.').Select(it => SqlTranslationLeft + it + SqlTranslationRight));
+            }
             else
                 return SqlTranslationLeft + propertyName + SqlTranslationRight;
         }
@@ -139,6 +143,10 @@ namespace SqlSugar
                     {
                         parameterName = parameterName.Replace("]", "_");
                     }
+                    if (parameterName.Contains(this.SqlTranslationLeft))
+                    {
+                        parameterName = parameterName.Replace(this.SqlTranslationLeft, "_");
+                    }
                     switch (item.ConditionalType)
                     {
                         case ConditionalType.Equal:
@@ -183,7 +191,7 @@ namespace SqlSugar
                             break;
                         case ConditionalType.NoLike:
                             builder.AppendFormat(temp, type, item.FieldName.ToSqlFilter(), " NOT LIKE", parameterName);
-                            parameters.Add(new SugarParameter(parameterName, item.FieldValue + "%"));
+                            parameters.Add(new SugarParameter(parameterName, "%" + item.FieldValue + "%"));
                             break;
                         case ConditionalType.LikeRight:
                             builder.AppendFormat(temp, type, item.FieldName.ToSqlFilter(), "LIKE", parameterName);
@@ -194,7 +202,7 @@ namespace SqlSugar
                             parameters.Add(new SugarParameter(parameterName, item.FieldValue));
                             break;
                         case ConditionalType.IsNullOrEmpty:
-                            builder.AppendFormat("{0} ({1}) OR ({2}) ", type, item.FieldName.ToSqlFilter() + " IS NULL ", item.FieldName.ToSqlFilter() + " = '' ");
+                            builder.AppendFormat(" {0} (({1}) OR ({2})) ", type, item.FieldName.ToSqlFilter() + " IS NULL ", item.FieldName.ToSqlFilter() + " = '' ");
                             parameters.Add(new SugarParameter(parameterName, item.FieldValue));
                             break;
                         case ConditionalType.IsNot:
@@ -206,6 +214,17 @@ namespace SqlSugar
                             {
                                 builder.AppendFormat(temp, type, item.FieldName.ToSqlFilter(), "<>", parameterName);
                                 parameters.Add(new SugarParameter(parameterName, item.FieldValue));
+                            }
+                            break;
+                        case ConditionalType.EqualNull:
+                            if (GetFieldValue(item) == null)
+                            {
+                                builder.AppendFormat(temp, type, item.FieldName.ToSqlFilter(), "  IS ", " NULL ");
+                            }
+                            else
+                            {
+                                builder.AppendFormat(temp, type, item.FieldName.ToSqlFilter(), "=", parameterName);
+                                parameters.Add(new SugarParameter(parameterName, GetFieldValue(item)));
                             }
                             break;
                         default:

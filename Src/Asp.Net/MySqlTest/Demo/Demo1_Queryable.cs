@@ -93,11 +93,11 @@ namespace OrmTest
             ))
            .Select((o, i, c) => new { o,i}).ToList();
 
-            List<Dictionary<string, object>> ListDic = db.Queryable<Order, OrderItem, Custom>((o, i, c) => new JoinQueryInfos(
-                  JoinType.Left, o.Id == i.OrderId,
-                  JoinType.Left, o.CustomId == c.Id
-                ))
-                .Select<ExpandoObject>().ToList().Select(it => it.ToDictionary(x => x.Key, x => x.Value)).ToList();
+ 
+           var mergeList= db.Queryable<Order>()
+                 .Select(it => new { id = it.Id })
+                 .MergeTable().Select<Order>().ToList();
+
             Console.WriteLine("#### ReturnType End ####");
         }
 
@@ -124,7 +124,11 @@ namespace OrmTest
             Console.WriteLine("#### SqlFunc Start ####");
             var db = GetInstance();
             var index= db.Queryable<Order>().Select(it => SqlFunc.CharIndex("a", "cccacc")).First();
-
+            var list2 = db.Queryable<Order>().Select(it => new
+            {
+                date = SqlFunc.ToDateShort(it.CreateTime),
+                datetime = SqlFunc.ToDate(it.CreateTime)
+            }).ToList();
             Console.WriteLine("#### SqlFunc  End ####");
         }
 

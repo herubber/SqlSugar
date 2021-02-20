@@ -23,7 +23,9 @@ namespace SqlSugar
                            syscolumns.Id AS TableId,
                            syscolumns.name AS DbColumnName,
                            systypes.name AS DataType,
-                           syscolumns.length AS [Length],
+                           COLUMNPROPERTY(syscolumns.id,syscolumns.name,'PRECISION') as [length],
+                           isnull(COLUMNPROPERTY(syscolumns.id,syscolumns.name,'Scale'),0) as Scale, 
+						   isnull(COLUMNPROPERTY(syscolumns.id,syscolumns.name,'Scale'),0) as DecimalDigits,
                            sys.extended_properties.[value] AS [ColumnDescription],
                            syscomments.text AS DefaultValue,
                            syscolumns.isnullable AS IsNullable,
@@ -51,8 +53,8 @@ namespace SqlSugar
                     WHERE syscolumns.id IN
                         (SELECT id
                          FROM sysobjects
-                         WHERE xtype IN('u',
-                                        'v') )
+                         WHERE upper(xtype) IN('U',
+                                        'V') )
                       AND (systypes.name <> 'sysname')
                       AND sysobjects.name='{0}'
                       AND systypes.name<>'geometry'
@@ -185,7 +187,7 @@ namespace SqlSugar
         {
             get
             {
-                return "EXEC sp_dropextendedproperty 'MS_Description','user',dbo,'table','{1}','column',{0}";
+                return "EXEC sp_dropextendedproperty 'MS_Description','user',dbo,'table','{1}','column','{0}'";
             }
 
         }

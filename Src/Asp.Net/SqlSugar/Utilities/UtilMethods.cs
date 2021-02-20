@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,7 +21,7 @@ namespace SqlSugar
         {
             return To(value, destinationType, CultureInfo.InvariantCulture);
         }
- 
+
         internal static object To(object value, Type destinationType, CultureInfo culture)
         {
             if (value != null)
@@ -43,6 +45,74 @@ namespace SqlSugar
             }
             return value;
         }
+        public static bool IsAnyAsyncMethod(StackFrame[] methods)
+        {
+            bool isAsync = false;
+            foreach (var item in methods)
+            {
+                if (UtilMethods.IsAsyncMethod(item.GetMethod()))
+                {
+                    isAsync = true;
+                }
+            }
+            return isAsync;
+        }
+
+        public static bool IsAsyncMethod(MethodBase method)
+        {
+            if (method == null)
+            {
+                return false;
+            }
+            var name= method.Name;
+            if (name.Contains("OutputAsyncCausalityEvents"))
+            {
+                return true;
+            }
+            if (name.Contains("OutputWaitEtwEvents"))
+            {
+                return true;
+            }
+            if (name.Contains("ExecuteAsync"))
+            {
+                return true;
+            }
+            Type attType = typeof(AsyncStateMachineAttribute); 
+            var attrib = (AsyncStateMachineAttribute)method.GetCustomAttribute(attType);
+            return (attrib != null);
+        }
+
+        public static StackTraceInfo GetStackTrace()
+        {
+
+            StackTrace st = new StackTrace(true);
+            StackTraceInfo info = new StackTraceInfo();
+            info.MyStackTraceList = new List<StackTraceInfoItem>();
+            info.SugarStackTraceList = new List<StackTraceInfoItem>();
+            for (int i = 0; i < st.FrameCount; i++)
+            {
+                var frame = st.GetFrame(i);
+                if (frame.GetMethod().Module.Name.ToLower() != "sqlsugar.dll"&& frame.GetMethod().Name.First()!='<')
+                {
+                    info.MyStackTraceList.Add(new StackTraceInfoItem()
+                    {
+                        FileName = frame.GetFileName(),
+                        MethodName = frame.GetMethod().Name,
+                        Line = frame.GetFileLineNumber()
+                    });
+                }
+                else
+                {
+                    info.SugarStackTraceList.Add(new StackTraceInfoItem()
+                    {
+                        FileName = frame.GetFileName(),
+                        MethodName = frame.GetMethod().Name,
+                        Line = frame.GetFileLineNumber()
+                    });
+                }
+            }
+            return info;
+        }
 
         internal static T To<T>(object value)
         {
@@ -59,7 +129,9 @@ namespace SqlSugar
             itemSql = Regex.Replace(itemSql, string.Format(@"{0}\)", "\\" + itemParameter.ParameterName), newName + ")", RegexOptions.IgnoreCase);
             itemSql = Regex.Replace(itemSql, string.Format(@"{0}\,", "\\" + itemParameter.ParameterName), newName + ",", RegexOptions.IgnoreCase);
             itemSql = Regex.Replace(itemSql, string.Format(@"{0}$", "\\" + itemParameter.ParameterName), newName, RegexOptions.IgnoreCase);
-            itemSql = Regex.Replace(itemSql, string.Format(@"\+{0}\+", "\\" + itemParameter.ParameterName), "+"+newName+"+", RegexOptions.IgnoreCase);
+            itemSql = Regex.Replace(itemSql, string.Format(@"\+{0}\+", "\\" + itemParameter.ParameterName), "+" + newName + "+", RegexOptions.IgnoreCase);
+            itemSql = Regex.Replace(itemSql, string.Format(@"\+{0} ", "\\" + itemParameter.ParameterName), "+" + newName +" ", RegexOptions.IgnoreCase);
+            itemSql = Regex.Replace(itemSql, string.Format(@" {0}\+", "\\" + itemParameter.ParameterName)," "+ newName + "+", RegexOptions.IgnoreCase);
             itemSql = Regex.Replace(itemSql, string.Format(@"\|\|{0}\|\|", "\\" + itemParameter.ParameterName), "+" + newName + "+", RegexOptions.IgnoreCase);
             return itemSql;
         }
@@ -119,7 +191,14 @@ namespace SqlSugar
             return (T)Convert.ChangeType(obj, typeof(T));
         }
 
-        internal static void RepairReplicationParameters(ref string appendSql, SugarParameter[] parameters, int addIndex,string append=null)
+        internal static DateTimeOffset GetDateTimeOffsetByDateTime(DateTime date)
+        {
+            date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            DateTimeOffset utcTime2 = date;
+            return utcTime2;
+        }
+
+        internal static void RepairReplicationParameters(ref string appendSql, SugarParameter[] parameters, int addIndex, string append = null)
         {
             if (appendSql.HasValue() && parameters.HasValue())
             {
@@ -127,7 +206,7 @@ namespace SqlSugar
                 {
                     //Compatible with.NET CORE parameters case
                     var name = parameter.ParameterName;
-                    string newName = name +append+ addIndex;
+                    string newName = name + append + addIndex;
                     appendSql = ReplaceSqlParameter(appendSql, parameter, newName);
                     parameter.ParameterName = newName;
                 }
@@ -160,7 +239,7 @@ namespace SqlSugar
             return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
         }
 
-        internal static Int64  GetLong(byte[] bytes)
+        internal static Int64 GetLong(byte[] bytes)
         {
             return Convert.ToInt64(string.Join("", bytes).PadRight(20, '0'));
         }
@@ -235,7 +314,7 @@ namespace SqlSugar
                 }
                 return decode;
             }
-            catch  
+            catch
             {
                 return code;
             }

@@ -230,13 +230,25 @@ namespace SqlSugar
         {
             get
             {
-                throw new NotSupportedException();
+                return "alter table  {0} rename to {1}";
             }
         }
 
-        protected override string CreateIndexSql => throw new NotSupportedException();
+        protected override string CreateIndexSql 
+        {
+            get 
+            {
+                return "CREATE {3} INDEX Index_{0}_{2} ON {0}({1})";
+            }
+        }
 
-        protected override string IsAnyIndexSql => throw new NotSupportedException();
+        protected override string IsAnyIndexSql
+        {
+            get
+            {
+                return "SELECT count(*) FROM sqlite_master WHERE name = '{0}'";
+            }
+        }
 
         protected override string AddDefaultValueSql => throw new NotSupportedException();
         #endregion

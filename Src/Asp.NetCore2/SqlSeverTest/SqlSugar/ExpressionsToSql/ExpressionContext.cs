@@ -36,6 +36,7 @@ namespace SqlSugar
             }
         }
         public int SubQueryIndex { get; set; }
+        public int JoinIndex { get; set; }
         public int Index { get; set; }
         public int ParameterIndex { get; set; }
         public string SingleTableNameSubqueryShortName{ get;  set; }
@@ -127,6 +128,7 @@ namespace SqlSugar
             copyContext.RefreshMapping = this.RefreshMapping;
             copyContext.ParameterIndex = this.ParameterIndex;
             copyContext.PgSqlIsAutoToLower = this.PgSqlIsAutoToLower;
+            copyContext.IsSingle = this.IsSingle;
             return copyContext;
         }
         public ExpressionContext GetCopyContextWithMapping()
@@ -141,6 +143,7 @@ namespace SqlSugar
             copyContext.InitMappingInfo = this.InitMappingInfo;
             copyContext.RefreshMapping = this.RefreshMapping;
             copyContext.PgSqlIsAutoToLower = this.PgSqlIsAutoToLower;
+            copyContext.IsSingle = this.IsSingle;
             return copyContext;
         }
         #endregion

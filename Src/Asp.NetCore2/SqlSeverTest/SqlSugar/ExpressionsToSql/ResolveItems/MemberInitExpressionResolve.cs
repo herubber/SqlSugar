@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -61,7 +60,7 @@ namespace SqlSugar
                     if (customAttribute?.IsJson ?? false)
                     {
                         var paramterValue = ExpressionTool.DynamicInvoke(item);
-                        var parameterName = AppendParameter(JsonConvert.SerializeObject(paramterValue));
+                        var parameterName = AppendParameter(new SerializeService().SerializeObject(paramterValue));
                         this.Context.Result.Append(base.Context.GetEqString(memberName, parameterName));
 
                         continue;
@@ -101,9 +100,9 @@ namespace SqlSugar
                 {
                     try
                     {
-                        parameter.Context.Result.Append(base.Context.GetEqString(memberName,AppendParameter(ExpressionTool.DynamicInvoke(item).ObjToBool())));
+                        parameter.Context.Result.Append(base.Context.GetEqString(memberName, AppendParameter(ExpressionTool.DynamicInvoke(item).ObjToBool())));
                     }
-                    catch  
+                    catch
                     {
                         throw new NotSupportedException(item.ToString());
                     }
@@ -124,7 +123,7 @@ namespace SqlSugar
                         this.Context.Result.Append(base.Context.GetEqString(memberName, parameterName));
                     }
                 }
-                else if (IsConst(item)&&IsConvert(item)&&UtilMethods.IsNullable(item.Type) && UtilMethods.GetUnderType(item.Type)==UtilConstants.BoolType)
+                else if (IsConst(item) && IsConvert(item) && UtilMethods.IsNullable(item.Type) && UtilMethods.GetUnderType(item.Type) == UtilConstants.BoolType)
                 {
                     item = (item as UnaryExpression).Operand;
                     parameter.Context.Result.Append(base.Context.GetEqString(memberName, GetNewExpressionValue(item)));
@@ -155,6 +154,10 @@ namespace SqlSugar
                 else if (item is BinaryExpression)
                 {
                     var result = GetNewExpressionValue(item);
+                    if (result.HasValue())
+                    {
+                        result = result.Replace(",", UtilConstants.ReplaceCommaKey);
+                    }
                     this.Context.Result.Append(base.Context.GetEqString(memberName, result));
                 }
                 else if (item is MemberInitExpression)
@@ -183,6 +186,11 @@ namespace SqlSugar
                         throw new NotSupportedException("Not Supported " + item.ToString() + " " + ex.Message);
                     }
                 }
+                else if (item is ConditionalExpression)
+                {
+                    var result = GetNewExpressionValue(item);
+                    this.Context.Result.Append(base.Context.GetEqString(memberName, result));
+                }
             }
         }
         private static bool IsConst(Expression item)
@@ -205,7 +213,8 @@ namespace SqlSugar
                     base.Expression = item;
                     base.Start();
                     var subSql = base.Context.GetEqString(memberName, parameter.CommonTempData.ObjToString());
-                    if (subSql.Contains(",")) {
+                    if (subSql.Contains(","))
+                    {
                         subSql = subSql.Replace(",", UtilConstants.ReplaceCommaKey);
                     }
                     if (ResolveExpressType.Update == this.Context.ResolveType)
@@ -221,7 +230,7 @@ namespace SqlSugar
                         }
                     }
                     parameter.Context.Result.Append(subSql);
-                });        
+                });
             }
             else
             {
@@ -242,8 +251,26 @@ namespace SqlSugar
                 MemberAssignment memberAssignment = (MemberAssignment)binding;
                 var memberName = memberAssignment.Member.Name;
                 var item = memberAssignment.Expression;
+                if (IsNullable(item) && item is UnaryExpression)
+                {
+                    var memtype = ExpressionTool.GetMemberInfoType(memberAssignment.Member);
+                    if (IsNullable(memtype) && UtilMethods.GetUnderType(memtype) == UtilMethods.GetUnderType(item.Type))
+                    {
+                        item = (item as UnaryExpression).Operand;
+                    }
+                }
                 ResolveNewExpressions(parameter, item, memberName);
             }
+        }
+
+        private static bool IsNullable(Type memtype)
+        {
+            return memtype.Name == "Nullable`1";
+        }
+
+        private static bool IsNullable(Expression item)
+        {
+            return item.Type.Name == "Nullable`1";
         }
 
         //private bool IsSubMethod(MethodCallExpression express)

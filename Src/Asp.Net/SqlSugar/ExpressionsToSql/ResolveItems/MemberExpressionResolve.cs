@@ -178,12 +178,7 @@ namespace SqlSugar
             var value = GetNewExpressionValue(expression.Expression);
             if (expression.Member.Name == "Date")
             {
-                AppendMember(parameter, isLeft, GetToDate(this.Context.DbMehtods.MergeString(
-                                  this.GetDateValue(value, DateType.Year),
-                                  "'-'",
-                                  this.GetDateValue(value, DateType.Month),
-                                  "'-'",
-                                  this.GetDateValue(value, DateType.Day))));
+                AppendMember(parameter, isLeft, GetToDateShort(value));
             }
             else
             {
@@ -250,6 +245,10 @@ namespace SqlSugar
             var value = ExpressionTool.GetMemberValue(expression.Member, expression);
             if (isSetTempData)
             {
+                if (value is MapperSql)
+                {
+                    value = (value as MapperSql).Sql;
+                }
                 baseParameter.CommonTempData = value;
             }
             else
@@ -292,12 +291,7 @@ namespace SqlSugar
                              new MethodCallExpressionArgs() {   MemberName=DateType.Year, MemberValue=DateType.Year}
                          }
                 };
-                AppendMember(parameter, isLeft, GetToDate(this.Context.DbMehtods.MergeString(
-                    this.GetDateValue(parameter.CommonTempData, DateType.Year),
-                    "'-'",
-                    this.GetDateValue(parameter.CommonTempData, DateType.Month),
-                    "'-'",
-                    this.GetDateValue(parameter.CommonTempData, DateType.Day))));
+                AppendMember(parameter, isLeft, GetToDateShort(parameter.CommonTempData.ObjToString()));
             }
             parameter.CommonTempData = oldCommonTempDate;
         }
@@ -455,8 +449,8 @@ namespace SqlSugar
             };
             return this.Context.DbMehtods.DateValue(pars);
         }
-
-        private string GetToDate(string value)
+ 
+        private string GetToDateShort(string value)
         {
             var pars = new MethodCallExpressionModel()
             {
@@ -464,7 +458,7 @@ namespace SqlSugar
                              new MethodCallExpressionArgs() { MemberName=value, MemberValue=value },
                          }
             };
-            return this.Context.DbMehtods.ToDate(pars);
+            return this.Context.DbMehtods.ToDateShort(pars);
         }
 
         private void SettingParameters(ExpressionParameter parameter, out ExpressionParameter baseParameter, out MemberExpression expression, out bool? isLeft, out bool isSetTempData, out bool isValue, out bool isValueBool, out bool isLength, out bool isDateValue, out bool isHasValue, out bool isDateDate, out bool isMemberValue, out bool isSingle, out bool fieldIsBool, out bool isSelectField, out bool isField)

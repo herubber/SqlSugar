@@ -42,6 +42,7 @@ namespace SqlSugar
         string CaseWhen(List<KeyValuePair<string,string>> sqls);
         string Substring(MethodCallExpressionModel model);
         string ToDate(MethodCallExpressionModel model);
+        string ToDateShort(MethodCallExpressionModel model);
         string ToTime(MethodCallExpressionModel model);
         string ToDecimal(MethodCallExpressionModel model);
         string Length(MethodCallExpressionModel model);
@@ -65,5 +66,11 @@ namespace SqlSugar
         string GetDate();
         string GetRandom();
         string CharIndex(MethodCallExpressionModel model);
+        string BitwiseAnd(MethodCallExpressionModel model);
+        string BitwiseInclusiveOR(MethodCallExpressionModel model);
+
+        string Oracle_ToDate(MethodCallExpressionModel model);
+        string Oracle_ToChar(MethodCallExpressionModel model);
+        string SqlServer_DateDiff(MethodCallExpressionModel model);
     }
 }

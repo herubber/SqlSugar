@@ -89,6 +89,7 @@ namespace SqlSugar
             if (parameters == null || parameters.Length == 0) return null;
             MySqlParameter[] result = new MySqlParameter[parameters.Length];
             int index = 0;
+            var isVarchar = this.Context.IsVarchar();
             foreach (var parameter in parameters)
             {
                 if (parameter.Value == null) parameter.Value = DBNull.Value;
@@ -97,17 +98,25 @@ namespace SqlSugar
                 sqlParameter.Size = parameter.Size;
                 sqlParameter.Value = parameter.Value;
                 sqlParameter.DbType = parameter.DbType;
-                sqlParameter.Direction = parameter.Direction;
-                if (sqlParameter.Direction == 0)
+                if (parameter.Direction == 0)
                 {
-                    sqlParameter.Direction = ParameterDirection.Input;
+                    parameter.Direction = ParameterDirection.Input; 
                 }
+                sqlParameter.Direction = parameter.Direction;
+                //if (sqlParameter.Direction == 0)
+                //{
+                //    sqlParameter.Direction = ParameterDirection.Input;
+                //}
                 result[index] = sqlParameter;
-                if (sqlParameter.Direction.IsIn(ParameterDirection.Output, ParameterDirection.InputOutput,ParameterDirection.ReturnValue))
+                if (sqlParameter.Direction.IsIn(ParameterDirection.Output, ParameterDirection.InputOutput, ParameterDirection.ReturnValue))
                 {
                     if (this.OutputParameters == null) this.OutputParameters = new List<IDataParameter>();
                     this.OutputParameters.RemoveAll(it => it.ParameterName == sqlParameter.ParameterName);
                     this.OutputParameters.Add(sqlParameter);
+                }
+                if (isVarchar && sqlParameter.DbType == System.Data.DbType.String)
+                {
+                    sqlParameter.DbType = System.Data.DbType.AnsiString;
                 }
                 ++index;
             }

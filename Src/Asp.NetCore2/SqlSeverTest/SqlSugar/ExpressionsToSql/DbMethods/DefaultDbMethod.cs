@@ -71,6 +71,11 @@ namespace SqlSugar
                     {
                         inValues.Add(Convert.ToInt64(item));
                     }
+                    else if (item != null && item.GetType()==UtilConstants.ByteArrayType)
+                    {
+                        var inStr= BitConverter.ToString((byte[])item).Replace("-", "");
+                        inValues.Add(inStr);
+                    }
                     else
                     {
                         inValues.Add(item);
@@ -80,8 +85,8 @@ namespace SqlSugar
             var value = model.Args[1].MemberName;
             string inValueString = null;
             if (inValues != null && inValues.Count > 0)
-            {
-                inValueString = inValues.ToArray().ToJoinSqlInVals();
+            {            
+                    inValueString = inValues.ToArray().ToJoinSqlInVals();             
             }
             if (inValueString.IsNullOrEmpty())
             {
@@ -252,6 +257,12 @@ namespace SqlSugar
             return string.Format(" CAST({0} AS DATETIME)", parameter.MemberName);
         }
 
+        public virtual string ToDateShort(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            return string.Format(" CAST({0} AS DATE)", parameter.MemberName);
+        }
+
         public virtual string ToTime(MethodCallExpressionModel model)
         {
             var parameter = model.Args[0];
@@ -419,6 +430,38 @@ namespace SqlSugar
         {
             var parameter = model.Args[0];
             return string.Format(" CAST({0} AS VARCHAR(MAX))", parameter.MemberName);
+        }
+        public  string BitwiseAnd(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            var parameter2 = model.Args[1];
+            return string.Format(" ({0} & {1}) ", parameter.MemberName, parameter2.MemberName); ;
+        }
+        public string BitwiseInclusiveOR(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            var parameter2 = model.Args[1];
+            return string.Format(" ({0} | {1}) ", parameter.MemberName, parameter2.MemberName); ;
+        }
+
+        public string Oracle_ToDate(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            var parameter2 = model.Args[1];
+            return string.Format(" to_date({0},{1}) ", parameter.MemberName, parameter2.MemberName); ;
+        }
+        public string Oracle_ToChar(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            var parameter2 = model.Args[1];
+            return string.Format("to_char({0},{1}) ", parameter.MemberName, parameter2.MemberName); ;
+        }
+        public string SqlServer_DateDiff(MethodCallExpressionModel model)
+        {
+            var parameter = model.Args[0];
+            var parameter2 = model.Args[1];
+            var parameter3 = model.Args[2];
+            return string.Format(" DATEDIFF({0},{1},{2}) ", parameter.MemberValue?.ToString().ToSqlFilter(), parameter2.MemberName, parameter3.MemberName); ;
         }
     }
 }

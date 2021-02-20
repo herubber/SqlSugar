@@ -133,7 +133,24 @@ namespace SqlSugar
             if (parameter.BaseExpression is BinaryExpression || parameter.BaseExpression == null)
             {
                 var oppoSiteExpression = isLeft == true ? parameter.BaseParameter.RightExpression : parameter.BaseParameter.LeftExpression;
-                if (parameter.CurrentExpression is MethodCallExpression||parameter.CurrentExpression is ConditionalExpression||parameter.CurrentExpression.NodeType==ExpressionType.Coalesce)
+
+                if (value is MapperSql)
+                {
+                    var sql = ((MapperSql)value).Sql;
+                    if (isLeft == true)
+                    {
+                        sql += ExpressionConst.ExpressionReplace + parameter.BaseParameter.Index;
+                    }
+                    if (this.Context.Result.Contains(ExpressionConst.FormatSymbol))
+                    {
+                        this.Context.Result.Replace(ExpressionConst.FormatSymbol, sql);
+                    }
+                    else
+                    {
+                        this.Context.Result.Append(sql);
+                    }
+                }
+                else if(parameter.CurrentExpression is MethodCallExpression || parameter.CurrentExpression is ConditionalExpression || parameter.CurrentExpression.NodeType == ExpressionType.Coalesce)
                 {
                     var appendValue = value;
                     if (this.Context.Result.Contains(ExpressionConst.FormatSymbol))
@@ -174,7 +191,8 @@ namespace SqlSugar
                         this.Context.Result.Append(appendValue);
                     }
                 }
-                else if ((oppoSiteExpression is UnaryExpression && (oppoSiteExpression as UnaryExpression).Operand is MemberExpression)) {
+                else if ((oppoSiteExpression is UnaryExpression && (oppoSiteExpression as UnaryExpression).Operand is MemberExpression))
+                {
                     string appendValue = Context.SqlParameterKeyWord
                       + ((MemberExpression)(oppoSiteExpression as UnaryExpression).Operand).Member.Name
                       + Context.ParameterIndex;
@@ -343,6 +361,10 @@ namespace SqlSugar
                     this.Context.Result.IsLockCurrentParameter = true;
                     parameter.IsAppendTempDate();
                     this.Expression = item;
+                    if (IsBoolValue(item))
+                    {
+                        this.Expression = (item as MemberExpression).Expression;
+                    }
                     this.Start();
                     parameter.IsAppendResult();
                     this.Context.Result.Append(this.Context.GetAsString(asName, parameter.CommonTempData.ObjToString()));
@@ -378,7 +400,7 @@ namespace SqlSugar
                         this.Context.Result.CurrentParameter = parameter;
                         this.Context.Result.IsLockCurrentParameter = true;
                         parameter.IsAppendTempDate();
-                        this.Expression = item;
+                        this.Expression = expression;
                         this.Start();
                         parameter.IsAppendResult();
                         this.Context.Result.Append(this.Context.GetAsString(asName, parameter.CommonTempData.ObjToString()));
@@ -434,26 +456,15 @@ namespace SqlSugar
                     }
                     if (property.PropertyType.IsClass())
                     {
-
+                        var comumnInfo=property.GetCustomAttribute<SugarColumn>();
+                        if (comumnInfo != null && comumnInfo.IsJson)
+                        {
+                            asName = GetAsName(item, shortName, property);
+                        }
                     }
                     else
                     {
-                        var propertyName = property.Name;
-                        var dbColumnName = propertyName;
-                        var mappingInfo = this.Context.MappingColumns.FirstOrDefault(it => it.EntityName == item.Type.Name && it.PropertyName.Equals(propertyName, StringComparison.CurrentCultureIgnoreCase));
-                        if (mappingInfo.HasValue())
-                        {
-                            dbColumnName = mappingInfo.DbColumnName;
-                        }
-                        asName = this.Context.GetTranslationText(item.Type.Name + "." + propertyName);
-                        if (Context.IsJoin)
-                        {
-                            this.Context.Result.Append(Context.GetAsString(asName, dbColumnName, shortName.ObjToString()));
-                        }
-                        else
-                        {
-                            this.Context.Result.Append(Context.GetAsString(asName, dbColumnName));
-                        }
+                        asName = GetAsName(item, shortName, property);
                     }
                 }
             }
@@ -491,6 +502,39 @@ namespace SqlSugar
                 Check.ThrowNotSupportedException(item.GetType().Name);
             }
         }
+
+        private string GetAsName(Expression item, object shortName, PropertyInfo property)
+        {
+            string asName;
+            var propertyName = property.Name;
+            var dbColumnName = propertyName;
+            var mappingInfo = this.Context.MappingColumns.FirstOrDefault(it => it.EntityName == item.Type.Name && it.PropertyName.Equals(propertyName, StringComparison.CurrentCultureIgnoreCase));
+            if (mappingInfo.HasValue())
+            {
+                dbColumnName = mappingInfo.DbColumnName;
+            }
+            asName = this.Context.GetTranslationText(item.Type.Name + "." + propertyName);
+            if (Context.IsJoin)
+            {
+                this.Context.Result.Append(Context.GetAsString(asName, dbColumnName, shortName.ObjToString()));
+            }
+            else
+            {
+                this.Context.Result.Append(Context.GetAsString(asName, dbColumnName));
+            }
+
+            return asName;
+        }
+
+        private static bool IsBoolValue(Expression item)
+        {
+            return item.Type == UtilConstants.BoolType &&
+                                   (item is MemberExpression) &&
+                                   (item as MemberExpression).Expression != null &&
+                                   (item as MemberExpression).Expression.Type == typeof(bool?) &&
+                                    (item as MemberExpression).Member.Name == "Value";
+        }
+
         protected static bool IsConvert(Expression item)
         {
             return item is UnaryExpression && item.NodeType == ExpressionType.Convert;
