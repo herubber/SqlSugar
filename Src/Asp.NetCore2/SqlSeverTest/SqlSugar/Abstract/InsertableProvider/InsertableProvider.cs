@@ -187,6 +187,7 @@ namespace SqlSugar
         {
             if (columns == null)
                 columns = new string[] { };
+
             // modify by kevin, 增加判断字段名,原来只判断属性名
             // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => !columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
             this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
@@ -195,6 +196,7 @@ namespace SqlSugar
                     ig.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)
                 )
             ).ToList();
+
             return this;
         }
 
@@ -202,7 +204,7 @@ namespace SqlSugar
         {
             var ignoreColumns = InsertBuilder.GetExpressionValue(columns, ResolveExpressType.ArraySingle).GetResultArray().Select(it => this.SqlBuilder.GetNoTranslationColumnName(it)).ToList();
             // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => ignoreColumns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
-
+            // modify by kevin, 增加判断字段名,原来只判断属性名
             //this.UpdateBuilder.DbColumnInfoList = this.UpdateBuilder.DbColumnInfoList.Where(it => updateColumns.Any(uc => uc.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) || uc.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)) || it.IsPrimarykey || it.IsIdentity).ToList();
             this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
                 .Where(it => insertColumns.Any(ic => 
@@ -216,7 +218,7 @@ namespace SqlSugar
         public IInsertable<T> InsertColumns(string[] columns)
         {
             // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => columns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
-            
+            // modify by kevin, 增加判断字段名,原来只判断属性名
             this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
                 .Where(it => columns.Any(ic => 
                     ic.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) ||
