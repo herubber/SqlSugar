@@ -17,7 +17,7 @@ namespace SqlSugar
         private string ConstructorTemplate { get; set; }
         private string UsingTemplate { get; set; }
         private string Namespace { get; set; }
-        private bool IsAttribute { get; set; }
+        protected bool IsAttribute { get; set; }
         private bool IsDefaultValue { get; set; }
         private Func<string, bool> WhereColumnsfunc;
         private ISqlBuilder SqlBuilder
@@ -351,7 +351,7 @@ namespace SqlSugar
             result = result.IsIn("''", "\"\"") ? string.Empty : result;
             return result;
         }
-        private string GetPropertyText(DbColumnInfo item, string PropertyText)
+        virtual protected string GetPropertyText(DbColumnInfo item, string PropertyText)
         {
             string SugarColumnText = DbFirstTemplate.ValueSugarCoulmn;
             var propertyName = GetPropertyName(item);
@@ -389,7 +389,7 @@ namespace SqlSugar
             var mappingInfo = this.Context.MappingTables.FirstOrDefault(it => it.DbTableName.Equals(item.TableName, StringComparison.CurrentCultureIgnoreCase));
             return mappingInfo == null ? item.TableName : mappingInfo.EntityName;
         }
-        private string GetPropertyName(DbColumnInfo item)
+        protected string GetPropertyName(DbColumnInfo item)
         {
             if (this.Context.MappingColumns.HasValue())
             {
@@ -401,7 +401,7 @@ namespace SqlSugar
                 return item.DbColumnName;
             }
         }
-        private string GetPropertyTypeName(DbColumnInfo item)
+        protected string GetPropertyTypeName(DbColumnInfo item)
         {
             string result = item.PropertyType != null ? item.PropertyType.Name : this.Context.Ado.DbBind.GetPropertyTypeName(item.DataType);
             if (result != "string" && result != "byte[]" && result != "object" && item.IsNullable)

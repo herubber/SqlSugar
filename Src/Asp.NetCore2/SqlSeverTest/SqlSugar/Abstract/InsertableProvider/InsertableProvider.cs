@@ -206,6 +206,7 @@ namespace SqlSugar
             // this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList.Where(it => ignoreColumns.Any(ig => ig.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase))).ToList();
             // modify by kevin, 增加判断字段名,原来只判断属性名
             //this.UpdateBuilder.DbColumnInfoList = this.UpdateBuilder.DbColumnInfoList.Where(it => updateColumns.Any(uc => uc.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) || uc.Equals(it.DbColumnName, StringComparison.CurrentCultureIgnoreCase)) || it.IsPrimarykey || it.IsIdentity).ToList();
+            var insertColumns = ignoreColumns;
             this.InsertBuilder.DbColumnInfoList = this.InsertBuilder.DbColumnInfoList
                 .Where(it => insertColumns.Any(ic => 
                     ic.Equals(it.PropertyName, StringComparison.CurrentCultureIgnoreCase) ||
